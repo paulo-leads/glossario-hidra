@@ -1,29 +1,34 @@
 name: Update Glossario Hidra
+
 on:
   schedule:
-    - cron: '0 11 * * 1' # Segunda 08:00 UTC-3
-  workflow_dispatch: # Permite rodar manual
+    - cron: '0 11 * * 1' # Segunda 08:00 UTC-3 (11:00 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          
+          node-version: '24'
+
       - name: Install deps
-        run: npm install @notionhq/client
-        
+        run: npm install
+
       - name: Build Glossario
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           DATABASE_ID: ${{ secrets.DATABASE_ID }}
-        run: node scripts/build.js
-        
+          SITE_BASE_URL: https://pauloleads.github.io/glossario-hidra
+        run: npm run build
+
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
