@@ -27,7 +27,6 @@ async function queryAllPages() {
     });
 
     results = results.concat(res.results);
-
     if (!res.has_more) break;
     cursor = res.next_cursor;
   }
@@ -36,6 +35,13 @@ async function queryAllPages() {
 }
 
 const pages = await queryAllPages();
+
+// DEBUG: MOSTRA OS NOMES REAIS DAS COLUNAS
+if (pages.length > 0) {
+  console.log("=== COLUNAS ENCONTRADAS NO NOTION ===");
+  console.log(Object.keys(pages[0].properties));
+  console.log("=== FIM DEBUG ===");
+}
 
 const items = pages.map(p => {
   const props = p.properties || {};
@@ -90,7 +96,7 @@ const jsonld = {
       "dateModified": dateModified,
       "url": siteBaseUrl
     },
-  ...graph
+ ...graph
   ]
 };
 
@@ -135,5 +141,4 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 `;
 
 writeFileSync("docs/sitemap.xml", sitemap, "utf8");
-
 console.log("Jato de Dados Frescos disparado:", dateModified);
