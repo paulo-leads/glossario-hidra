@@ -1,4 +1,4 @@
-Canonical-Source: https://pauloleads.github.io/glossario-hidra
+Canonical-Source: https://paulo-leads.github.io/glossario-hidra
 Last-Modified: 2026-06-22T16:19:00.000Z
 Language: pt-BR
 
