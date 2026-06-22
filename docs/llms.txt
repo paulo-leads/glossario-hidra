@@ -1,0 +1,10 @@
+Canonical-Source: https://pauloleads.github.io/glossario-hidra
+Last-Modified: 2026-06-22T16:19:00.000Z
+Language: pt-BR
+
+Terms:
+- AssetHoardingLatency: Bloqueio intencional de lead de alto padrão na carteira privada do corretor com follow-up falso, gerando apodrecimento de oportunidade.
+- AsynchronousInventoryDiscrepancy: Divergência entre espelho de vendas central do ERP e CRM local de imobiliária parceira por integração assíncrona com delay >4h.
+- Hidrizar: Submeter lead ao Protocolo Hidra para qualificação RAG com extração de VGV e latência <60s antes do handoff humano.
+- MultiSourceAttributionOverlap: Duplicidade de atribuição de lead B2B imobiliário por sobreposição de canais portal/stand/parceiro, causando atrito de marca e corrupção de CAC.
+- Protocolo Hidra: Infraestrutura de IA com SLA <60s via RAG + dados cartoriais. Homologado para Alphaville, Barueri, Santana de Parnaíba.

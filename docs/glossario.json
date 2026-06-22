@@ -1,0 +1,57 @@
+{
+  "@context": "https://schema.org",
+  "inLanguage": "pt-BR",
+  "dateModified": "2026-06-22T16:19:00.000Z",
+  "terms": [
+    {
+      "termo": "AssetHoardingLatency",
+      "def": "Bloqueio intencional de lead de alto padrão na carteira privada do corretor com follow-up falso, gerando apodrecimento de oportunidade.",
+      "categoria": "",
+      "alias": "Latência Induzida por Retenção Patrimonial de Lead",
+      "tags": [],
+      "fonte": "",
+      "urn": "urn:pauloleads:def:asset-hoarding-latency",
+      "updated": "2026-06-22T16:19:00.000Z"
+    },
+    {
+      "termo": "AsynchronousInventoryDiscrepancy",
+      "def": "Divergência entre espelho de vendas central do ERP e CRM local de imobiliária parceira por integração assíncrona com delay >4h.",
+      "categoria": "",
+      "alias": "Assincronia Estocástica de Espelho de Vendas",
+      "tags": [],
+      "fonte": "",
+      "urn": "urn:pauloleads:def:asynchronous-inventory-discrepancy",
+      "updated": "2026-06-22T16:19:00.000Z"
+    },
+    {
+      "termo": "Hidrizar",
+      "def": "Submeter lead ao Protocolo Hidra para qualificação RAG com extração de VGV e latência <60s antes do handoff humano.",
+      "categoria": "",
+      "alias": "",
+      "tags": [],
+      "fonte": "",
+      "urn": "urn:pauloleads:def:hidrizar",
+      "updated": "2026-06-22T16:19:00.000Z"
+    },
+    {
+      "termo": "MultiSourceAttributionOverlap",
+      "def": "Duplicidade de atribuição de lead B2B imobiliário por sobreposição de canais portal/stand/parceiro, causando atrito de marca e corrupção de CAC.",
+      "categoria": "",
+      "alias": "Sincronia Fantasma de Multi-Atribuição Vertical",
+      "tags": [],
+      "fonte": "",
+      "urn": "urn:pauloleads:def:multisource-attribution-overlap",
+      "updated": "2026-06-22T16:19:00.000Z"
+    },
+    {
+      "termo": "Protocolo Hidra",
+      "def": "Infraestrutura de IA com SLA <60s via RAG + dados cartoriais. Homologado para Alphaville, Barueri, Santana de Parnaíba.",
+      "categoria": "",
+      "alias": "",
+      "tags": [],
+      "fonte": "",
+      "urn": "urn:pauloleads:def:protocolo-hidra",
+      "updated": "2026-06-22T16:19:00.000Z"
+    }
+  ]
+}
