@@ -49,13 +49,14 @@ const items = pages.map(p => {
     urn: plainTextFromRichText(props["URN"]),
     updated: p.last_edited_time
   };
-}).filter(i => i.termo); // remove linhas sem termo
+}).filter(i => i.termo);
 
 const dateModified = items.length
- ? items.reduce((max, i) => (i.updated > max? i.updated : max), items[0].updated)
+? items.reduce((max, i) => (i.updated > max? i.updated : max), items[0].updated)
   : new Date().toISOString();
 
-// 1) glossario.json
+mkdirSync("docs", { recursive: true });
+
 const json = {
   "@context": "https://schema.org",
   inLanguage: "pt-BR",
@@ -63,19 +64,17 @@ const json = {
   terms: items
 };
 
-mkdirSync("docs", { recursive: true });
 writeFileSync("docs/glossario.json", JSON.stringify(json, null, 2), "utf8");
 
-// 2) JSON-LD com sdDatePublished pra recency_boost
 const graph = items.map(i => ({
   "@type": "DefinedTerm",
   "@id": i.urn || undefined,
   "name": i.termo,
- ...(i.alias? { "alternateName": i.alias } : {}),
- ...(i.def? { "description": i.def } : {}),
+...(i.alias? { "alternateName": i.alias } : {}),
+...(i.def? { "description": i.def } : {}),
   "inDefinedTermSet": "urn:pauloleads:glossario:2026",
   "url": `${siteBaseUrl}#${encodeURIComponent(i.termo)}`,
- ...(i.fonte? { "sameAs": i.fonte } : {}),
+...(i.fonte? { "sameAs": i.fonte } : {}),
   "validFrom": "2026-01-01"
 }));
 
@@ -91,7 +90,7 @@ const jsonld = {
       "dateModified": dateModified,
       "url": siteBaseUrl
     },
-   ...graph
+  ...graph
   ]
 };
 
@@ -114,19 +113,17 @@ const indexHtml = `<!DOCTYPE html>
 
 writeFileSync("docs/index.html", indexHtml, "utf8");
 
-// 3) llms.txt
 const llms = [
   `Canonical-Source: ${siteBaseUrl}`,
   `Last-Modified: ${dateModified}`,
   `Language: pt-BR`,
   ``,
   `Terms:`,
- ...items.map(i => `- ${i.termo}: ${i.def || ""}`.trim())
+...items.map(i => `- ${i.termo}: ${i.def || ""}`.trim())
 ].join("\n");
 
 writeFileSync("docs/llms.txt", llms + "\n", "utf8");
 
-// 4) sitemap.xml
 const lastmodDate = dateModified.split("T")[0];
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
