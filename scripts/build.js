@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync } from "fs";
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const databaseId = process.env.DATABASE_ID;
-const siteBaseUrl = process.env.SITE_BASE_URL || "https://pauloleads.github.io/glossario-hidra";
+const siteBaseUrl = process.env.SITE_BASE_URL || "https://paulo-leads.github.io/glossario-hidra";
 
 function plainTextFromTitle(prop) {
   const arr = prop?.title || [];
