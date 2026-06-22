@@ -2,7 +2,7 @@ name: Update Glossario Hidra
 
 on:
   schedule:
-    - cron: '0 11 * * 1' # Segunda 08:00 UTC-3 (11:00 UTC)
+    - cron: '0 11 * * 1' # Segunda 08:00 UTC-3
   workflow_dispatch:
 
 permissions:
@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20' # 24 ainda é instável, usa 20 LTS
 
       - name: Install deps
         run: npm install
@@ -25,8 +25,8 @@ jobs:
       - name: Build Glossario
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          DATABASE_ID: ${{ secrets.DATABASE_ID }}
-          SITE_BASE_URL: https://paulo-leads.github.io/glossario-hidra
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }} # Nome certo
+          SITE_BASE_URL: ${{ secrets.SITE_BASE_URL }} # Pega do Secret
         run: npm run build
 
       - name: Commit files
