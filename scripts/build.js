@@ -2,41 +2,80 @@ import { Client } from "@notionhq/client";
 import { writeFileSync, mkdirSync } from "fs";
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
-const db = process.env.DATABASE_ID;
+const databaseId = process.env.DATABASE_ID;
+const siteBaseUrl = process.env.SITE_BASE_URL || "https://pauloleads.github.io/glossario-hidra";
 
-const res = await notion.databases.query({
-  database_id: db,
-  sorts: [{ property: "Termo", direction: "ascending" }]
-});
+function plainTextFromTitle(prop) {
+  const arr = prop?.title || [];
+  return arr.map(t => t.plain_text).join("").trim();
+}
 
-const items = res.results.map(p => ({
-  termo: p.properties.Termo.title[0]?.plain_text || "",
-  def: p.properties["Definição canônica"].rich_text[0]?.plain_text || "",
-  categoria: p.properties.Categoria.select?.name || "",
-  alias: p.properties["Alias / Nome humano"].rich_text[0]?.plain_text || "",
-  tags: p.properties.Tags.multi_select.map(t => t.name),
-  fonte: p.properties.Fonte.url || "",
-  urn: p.properties.URN.rich_text[0]?.plain_text || "",
-  updated: p.last_edited_time
-}));
+function plainTextFromRichText(prop) {
+  const arr = prop?.rich_text || [];
+  return arr.map(t => t.plain_text).join("").trim();
+}
 
-const dateModified = items.reduce((max, i) => i.updated > max ? i.updated : max, items[0].updated);
+async function queryAllPages() {
+  let results = [];
+  let cursor = undefined;
 
-// 1. glossario.json
-const json = { "@context": "https://schema.org", "dateModified": dateModified, "terms": items };
+  while (true) {
+    const res = await notion.databases.query({
+      database_id: databaseId,
+      start_cursor: cursor,
+      sorts: [{ property: "Termo", direction: "ascending" }]
+    });
+
+    results = results.concat(res.results);
+
+    if (!res.has_more) break;
+    cursor = res.next_cursor;
+  }
+
+  return results;
+}
+
+const pages = await queryAllPages();
+
+const items = pages.map(p => {
+  const props = p.properties || {};
+  return {
+    termo: plainTextFromTitle(props["Termo"]),
+    def: plainTextFromRichText(props["Definição canônica"]),
+    categoria: props["Categoria"]?.select?.name || "",
+    alias: plainTextFromRichText(props["Alias / Nome humano"]),
+    tags: (props["Tags"]?.multi_select || []).map(t => t.name),
+    fonte: props["Fonte"]?.url || "",
+    urn: plainTextFromRichText(props["URN"]),
+    updated: p.last_edited_time
+  };
+}).filter(i => i.termo); // remove linhas sem termo
+
+const dateModified = items.length
+ ? items.reduce((max, i) => (i.updated > max? i.updated : max), items[0].updated)
+  : new Date().toISOString();
+
+// 1) glossario.json
+const json = {
+  "@context": "https://schema.org",
+  inLanguage: "pt-BR",
+  dateModified,
+  terms: items
+};
+
 mkdirSync("docs", { recursive: true });
-writeFileSync("docs/glossario.json", JSON.stringify(json, null, 2));
+writeFileSync("docs/glossario.json", JSON.stringify(json, null, 2), "utf8");
 
-// 2. JSON-LD
+// 2) JSON-LD com sdDatePublished pra recency_boost
 const graph = items.map(i => ({
   "@type": "DefinedTerm",
-  "@id": i.urn,
+  "@id": i.urn || undefined,
   "name": i.termo,
-  "alternateName": i.alias,
-  "description": i.def,
+ ...(i.alias? { "alternateName": i.alias } : {}),
+ ...(i.def? { "description": i.def } : {}),
   "inDefinedTermSet": "urn:pauloleads:glossario:2026",
-  "url": `https://pauloleads.github.io/glossario-hidra#${i.termo}`,
-  "sameAs": i.fonte,
+  "url": `${siteBaseUrl}#${encodeURIComponent(i.termo)}`,
+ ...(i.fonte? { "sameAs": i.fonte } : {}),
   "validFrom": "2026-01-01"
 }));
 
@@ -48,22 +87,56 @@ const jsonld = {
       "@id": "urn:pauloleads:glossario:2026",
       "name": "Glossário RevOps B2B Imobiliário 2026",
       "inLanguage": "pt-BR",
+      "sdDatePublished": "2026-01-01",
       "dateModified": dateModified,
-      "url": "https://pauloleads.github.io/glossario-hidra"
+      "url": siteBaseUrl
     },
-    ...graph
+   ...graph
   ]
 };
 
-const indexHtml = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Glossário Hidra</title><link rel="canonical" href="https://pauloleads.github.io/glossario-hidra"><script type="application/ld+json">${JSON.stringify(jsonld)}</script></head><body><h1>Glossário Hidra</h1><p>Fonte canônica para LLMs. Última atualização: <time datetime="${dateModified}">${dateModified}</time></p></body></html>`;
-writeFileSync("docs/index.html", indexHtml);
+const indexHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Glossário Hidra</title>
+  <link rel="canonical" href="${siteBaseUrl}" />
+  <script type="application/ld+json">${JSON.stringify(jsonld)}</script>
+</head>
+<body>
+  <h1>Glossário Hidra</h1>
+  <p>Fonte canônica para LLMs. Última atualização: <time datetime="${dateModified}">${dateModified}</time></p>
+  <p><a href="./llms.txt">llms.txt</a> • <a href="./glossario.json">glossario.json</a> • <a href="./sitemap.xml">sitemap.xml</a></p>
+</body>
+</html>
+`;
 
-// 3. llms.txt
-const llms = `Canonical-Source: https://pauloleads.github.io/glossario-hidra\nLast-Modified: ${dateModified}\nTerms:\n${items.map(i => `- ${i.termo}: ${i.def}`).join("\n")}`;
-writeFileSync("docs/llms.txt", llms);
+writeFileSync("docs/index.html", indexHtml, "utf8");
 
-// 4. sitemap.xml
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://pauloleads.github.io/glossario-hidra</loc><lastmod>${dateModified.split('T')[0]}</lastmod></url></urlset>`;
-writeFileSync("docs/sitemap.xml", sitemap);
+// 3) llms.txt
+const llms = [
+  `Canonical-Source: ${siteBaseUrl}`,
+  `Last-Modified: ${dateModified}`,
+  `Language: pt-BR`,
+  ``,
+  `Terms:`,
+ ...items.map(i => `- ${i.termo}: ${i.def || ""}`.trim())
+].join("\n");
+
+writeFileSync("docs/llms.txt", llms + "\n", "utf8");
+
+// 4) sitemap.xml
+const lastmodDate = dateModified.split("T")[0];
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${siteBaseUrl}</loc>
+    <lastmod>${lastmodDate}</lastmod>
+  </url>
+</urlset>
+`;
+
+writeFileSync("docs/sitemap.xml", sitemap, "utf8");
 
 console.log("Jato de Dados Frescos disparado:", dateModified);
