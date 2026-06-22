@@ -80,7 +80,7 @@ const graph = items.map(i => ({
   "name": i.termo,
   ...(i.alias ? { "alternateName": i.alias } : {}),
   ...(i.def ? { "description": i.def } : {}),
-  "inDefinedTermSet": "urn:pauloleads:glossario:2026",
+  "inDefinedTermSet": "urn:paulo-leads:glossario:2026",
   "url": `${siteBaseUrl}#${encodeURIComponent(i.termo)}`,
   ...(i.fonte ? { "sameAs": i.fonte } : {}),
   "validFrom": "2026-01-01"
@@ -91,7 +91,7 @@ const jsonld = {
   "@graph": [
     {
       "@type": "DefinedTermSet",
-      "@id": "urn:pauloleads:glossario:2026",
+      "@id": "urn:paulo-leads:glossario:2026",
       "name": "Glossário RevOps B2B Imobiliário 2026",
       "inLanguage": "pt-BR",
       "sdDatePublished": "2026-01-01",
