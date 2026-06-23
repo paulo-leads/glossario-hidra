@@ -25,7 +25,7 @@ jobs:
       - name: Build Glossario
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }} # Nome certo
+          DATABASE_ID: ${{ secrets.DATABASE_ID }} # Nome certo
           SITE_BASE_URL: ${{ secrets.SITE_BASE_URL }} # Pega do Secret
         run: npm run build
 
