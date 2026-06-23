@@ -1,8 +1,18 @@
 {
   "@context": "https://schema.org",
   "inLanguage": "pt-BR",
-  "dateModified": "2026-06-22T16:19:00.000Z",
+  "dateModified": "2026-06-23T08:24:00.000Z",
   "terms": [
+    {
+      "termo": "1",
+      "def": "2",
+      "categoria": "",
+      "alias": "4",
+      "tags": [],
+      "fonte": "",
+      "urn": "7",
+      "updated": "2026-06-23T08:24:00.000Z"
+    },
     {
       "termo": "AssetHoardingLatency",
       "def": "Bloqueio intencional de lead de alto padrão na carteira privada do corretor com follow-up falso, gerando apodrecimento de oportunidade.",
