@@ -1,31 +1,52 @@
 import { Client } from "@notionhq/client";
 import { writeFileSync, mkdirSync } from "fs";
 
+// ============================================================
+// 1. CONFIGURAÇÃO
+// ============================================================
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const databaseId = process.env.DATABASE_ID;
 const siteBaseUrl = process.env.SITE_BASE_URL || "https://paulo-leads.github.io/glossario-hidra";
 
-// --- helpers ---
+// ============================================================
+// 2. HELPERS
+// ============================================================
 function plainTextFromTitle(prop) {
   return (prop?.title || []).map(t => t.plain_text).join("").trim();
 }
+
 function plainTextFromRichText(prop) {
   return (prop?.rich_text || []).map(t => t.plain_text).join("").trim();
 }
-function plainTextFromText(prop) {
-  return plainTextFromRichText(prop); // funciona para tipo "text"
-}
+
 function urlFromUrl(prop) {
   return prop?.url || "";
 }
 
+function slugify(text) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function getProp(props, possibleNames) {
+  for (const name of possibleNames) {
+    if (props[name]) return props[name];
+  }
+  return null;
+}
+
 async function queryAllPages() {
-  let results = [], cursor;
+  let results = [];
+  let cursor = undefined;
   while (true) {
     const res = await notion.databases.query({
       database_id: databaseId,
       start_cursor: cursor,
-      sorts: [{ property: "Termo", direction: "ascending" }]
+      sorts: [{ property: "Termo", direction: "ascending" }],
     });
     results = results.concat(res.results);
     if (!res.has_more) break;
@@ -34,63 +55,59 @@ async function queryAllPages() {
   return results;
 }
 
+// ============================================================
+// 3. BUSCA OS DADOS DO NOTION
+// ============================================================
 const pages = await queryAllPages();
 
-// DEBUG: mostra as colunas reais
 if (pages.length) {
   console.log("=== COLUNAS ENCONTRADAS ===");
   console.log(Object.keys(pages[0].properties));
   console.log("===========================");
 }
 
-// --- Mapeamento inteligente ---
-function getProp(props, possibleNames) {
-  for (const name of possibleNames) {
-    if (props[name]) return props[name];
-  }
-  return null;
-}
+const items = pages
+  .map((p) => {
+    const props = p.properties || {};
 
-const items = pages.map(p => {
-  const props = p.properties || {};
-  // Tenta encontrar cada campo
-  const termo = plainTextFromTitle(props["Termo"]);
-  const def = plainTextFromRichText(
-    getProp(props, ["Definição canônica", "Definição canônica (text)", "Definição"])
-  );
-  const categoria = getProp(props, ["Categoria"])?.select?.name || "";
-  const alias = plainTextFromRichText(
-    getProp(props, ["Alias / Nome humano", "Alias", "Nome humano"])
-  );
-  const tags = (getProp(props, ["Tags"])?.multi_select || []).map(t => t.name);
-  const fonte = urlFromUrl(getProp(props, ["Fonte"]));
-  const urn = urlFromUrl(getProp(props, ["URN"])) || plainTextFromRichText(getProp(props, ["URN"]));
+    const termo = plainTextFromTitle(props["Termo"]);
+    const def = plainTextFromRichText(
+      getProp(props, ["Definição canônica", "Definição canônica (text)", "Definição"])
+    );
+    const categoria = getProp(props, ["Categoria"])?.select?.name || "";
+    const alias = plainTextFromRichText(
+      getProp(props, ["Alias / Nome humano", "Alias", "Nome humano"])
+    );
+    const tags = (getProp(props, ["Tags"])?.multi_select || []).map((t) => t.name);
+    const fonte = urlFromUrl(getProp(props, ["Fonte"]));
+    const urn = urlFromUrl(getProp(props, ["URN"])) || plainTextFromRichText(getProp(props, ["URN"]));
 
-  // Se existir coluna "Código", usa; senão gera a partir do termo
-  const codigoProp = getProp(props, ["Código"]);
-  let codigo = codigoProp ? plainTextFromRichText(codigoProp) : "";
-  if (!codigo && termo) {
-    codigo = termo.toUpperCase().replace(/\s+/g, "_");
-    // acrescenta sufixo _V1 se não tiver
-    if (!codigo.endsWith("_V1")) codigo += "_V1";
-  }
+    // Código – se existir a coluna, usa; senão gera a partir do termo
+    const codigoProp = getProp(props, ["Código"]);
+    let codigo = codigoProp ? plainTextFromRichText(codigoProp) : "";
+    if (!codigo && termo) {
+      codigo = termo.toUpperCase().replace(/\s+/g, "_");
+      if (!codigo.endsWith("_V1")) codigo += "_V1";
+    }
 
-  // QID (opcional)
-  const qid = urlFromUrl(getProp(props, ["QID"])) || plainTextFromRichText(getProp(props, ["QID"]));
+    // QID (opcional)
+    const qid = urlFromUrl(getProp(props, ["QID"])) || plainTextFromRichText(getProp(props, ["QID"]));
 
-  return {
-    termo,
-    codigo,
-    def,
-    categoria,
-    alias,
-    tags,
-    fonte,
-    urn,
-    qid,
-    updated: p.last_edited_time
-  };
-}).filter(i => i.termo);
+    return {
+      termo,
+      codigo,
+      def,
+      categoria,
+      alias,
+      tags,
+      fonte,
+      urn,
+      qid,
+      slug: slugify(termo),
+      updated: p.last_edited_time,
+    };
+  })
+  .filter((i) => i.termo);
 
 const dateModified = items.length
   ? items.reduce((max, i) => (i.updated > max ? i.updated : max), items[0].updated)
@@ -98,12 +115,14 @@ const dateModified = items.length
 
 mkdirSync("docs", { recursive: true });
 
-// --- JSON para API ---
+// ============================================================
+// 4. JSON PARA API (glossario.json)
+// ============================================================
 const json = {
   "@context": "https://schema.org",
   inLanguage: "pt-BR",
   dateModified,
-  terms: items.map(i => ({
+  terms: items.map((i) => ({
     termo: i.termo,
     codigo: i.codigo,
     definicao: i.def,
@@ -113,23 +132,26 @@ const json = {
     fonte: i.fonte,
     urn: i.urn,
     qid: i.qid,
-    url: i.fonte || `${siteBaseUrl}#${encodeURIComponent(i.termo)}`
-  }))
+    slug: i.slug,
+    url: `${siteBaseUrl}#${i.slug}`,
+  })),
 };
 writeFileSync("docs/glossario.json", JSON.stringify(json, null, 2), "utf8");
 
-// --- JSON-LD ---
-const graph = items.map(i => ({
+// ============================================================
+// 5. JSON-LD (Schema.org)
+// ============================================================
+const graph = items.map((i) => ({
   "@type": "DefinedTerm",
-  "@id": i.urn || `${siteBaseUrl}#${encodeURIComponent(i.termo)}`,
-  "name": i.termo,
-  ...(i.codigo ? { "identifier": i.codigo } : {}),
-  ...(i.alias ? { "alternateName": i.alias } : {}),
-  ...(i.def ? { "description": i.def } : {}),
-  ...(i.qid ? { "sameAs": i.qid } : {}),
-  "inDefinedTermSet": "urn:paulo-leads:glossario:2026",
-  "url": i.fonte || `${siteBaseUrl}#${encodeURIComponent(i.termo)}`,
-  "validFrom": "2026-01-01"
+  "@id": i.urn || `${siteBaseUrl}#${i.slug}`,
+  name: i.termo,
+  ...(i.codigo ? { identifier: i.codigo } : {}),
+  ...(i.alias ? { alternateName: i.alias } : {}),
+  ...(i.def ? { description: i.def } : {}),
+  ...(i.qid ? { sameAs: i.qid } : {}),
+  inDefinedTermSet: "urn:paulo-leads:glossario:2026",
+  url: `${siteBaseUrl}#${i.slug}`,
+  validFrom: "2026-01-01",
 }));
 
 const jsonld = {
@@ -138,27 +160,28 @@ const jsonld = {
     {
       "@type": "DefinedTermSet",
       "@id": "urn:paulo-leads:glossario:2026",
-      "name": "Glossário do Protocolo Hidra – RevOps B2B Imobiliário",
-      "inLanguage": "pt-BR",
-      "sdDatePublished": "2026-01-01",
-      "dateModified": dateModified,
-      "url": siteBaseUrl
+      name: "Glossário do Protocolo Hidra – RevOps B2B Imobiliário",
+      inLanguage: "pt-BR",
+      sdDatePublished: "2026-01-01",
+      dateModified: dateModified,
+      url: siteBaseUrl,
     },
-    ...graph
-  ]
+    ...graph,
+  ],
 };
 
-// --- HTML (mesmo template, mas com os dados reais) ---
-const termsForHTML = items.map(i => ({
+// ============================================================
+// 6. HTML COMPLETO (com slug e link âncora, sem URN visível)
+// ============================================================
+const termsForHTML = items.map((i) => ({
   name: i.termo,
   code: i.codigo,
   description: i.def,
   category: i.categoria,
   alias: i.alias,
   tags: i.tags,
-  urn: i.urn,
   qid: i.qid,
-  slug: encodeURIComponent(i.termo)
+  slug: i.slug,
 }));
 
 const indexHtml = `<!DOCTYPE html>
@@ -191,6 +214,7 @@ const indexHtml = `<!DOCTYPE html>
   <style>
     body { background: #0a1628; color: #e5e5e5; }
     .term:target { border-color: #f59e0b; box-shadow: 0 0 0 1px #f59e0b; }
+    .term:target .anchor-link { color: #f59e0b; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #0a1628; }
     ::-webkit-scrollbar-thumb { background: #d97706; border-radius: 3px; }
@@ -222,7 +246,7 @@ const indexHtml = `<!DOCTYPE html>
         </p>
       </div>
       <div class="mb-8">
-        <input type="text" id="search" placeholder="Buscar termo, código, categoria…" class="w-full px-5 py-4 bg-navy-800 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-burned-500 transition-colors" />
+        <input type="text" id="search" placeholder="Buscar termo, código ou categoria…" class="w-full px-5 py-4 bg-navy-800 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-burned-500 transition-colors" />
       </div>
       <div class="flex items-center justify-between text-xs text-gray-500 mb-8 pb-4 border-b border-white/5 flex-wrap gap-2">
         <span>Última atualização: <time datetime="${dateModified}">${new Date(dateModified).toLocaleDateString("pt-BR", { year: 'numeric', month: 'short', day: 'numeric' })}</time></span>
@@ -262,13 +286,19 @@ const indexHtml = `<!DOCTYPE html>
       termsEl.innerHTML = filtered.map(t => \`
         <div class="term bg-navy-800/40 border border-white/5 rounded-xl p-6 hover:border-burned-600/30 transition-all" id="\${t.slug}">
           <div class="flex items-start justify-between flex-wrap gap-2 mb-1">
-            <h2 class="text-xl font-bold text-burned-500">\${t.name}</h2>
+            <h2 class="text-xl font-bold text-burned-500">
+              \${t.name}
+              <a href="#\${t.slug}" 
+                 class="anchor-link ml-2 text-gray-500 hover:text-burned-400 transition-colors no-underline text-sm" 
+                 title="Link direto para citação deste termo (copie a URL da barra de endereços)">
+                🔗
+              </a>
+            </h2>
             \${t.code ? \`<span class="text-xs font-mono bg-navy-700 px-3 py-1 rounded-full text-gray-400 border border-white/5">\${t.code}</span>\` : ''}
           </div>
           \${t.category ? \`<div class="text-xs uppercase tracking-wider text-gray-500 mb-2">\${t.category}</div>\` : ''}
           \${t.alias ? \`<div class="text-sm text-gray-500 italic mb-2">Alias: \${t.alias}</div>\` : ''}
           \${t.tags && t.tags.length ? \`<div class="flex flex-wrap gap-1 mb-2">\${t.tags.map(tg => \`<span class="text-[10px] bg-navy-700 px-2 py-0.5 rounded-full text-gray-400 border border-white/5">\${tg}</span>\`).join('')}</div>\` : ''}
-          \${t.urn ? \`<div class="text-xs text-gray-600 font-mono break-all mb-2">URN: \${t.urn}</div>\` : ''}
           \${t.qid ? \`<div class="text-xs text-gray-600 font-mono break-all mb-3">QID: <a href="\${t.qid}" target="_blank" class="text-burned-400 hover:underline">\${t.qid}</a></div>\` : ''}
           <p class="text-gray-300 leading-relaxed">\${t.description}</p>
         </div>
@@ -285,25 +315,38 @@ const indexHtml = `<!DOCTYPE html>
 
 writeFileSync("docs/index.html", indexHtml, "utf8");
 
-// --- llms.txt ---
+// ============================================================
+// 7. llms.txt (para LLMs)
+// ============================================================
 const llms = [
   `Canonical-Source: ${siteBaseUrl}`,
   `Last-Modified: ${dateModified}`,
   `Language: pt-BR`,
   ``,
   `Termos (${items.length}):`,
-  ...items.map(i =>
-    `- ${i.termo} ${i.codigo ? `[${i.codigo}]` : ''}: ${i.def || ''} ${i.qid ? `(QID: ${i.qid})` : ''}`.trim()
-  )
+  ...items.map((i) =>
+    `- ${i.termo} ${i.codigo ? `[${i.codigo}]` : ""}: ${i.def || ""} ${i.qid ? `(QID: ${i.qid})` : ""}`
+      .trim()
+  ),
 ].join("\n");
 writeFileSync("docs/llms.txt", llms + "\n", "utf8");
 
-// --- sitemap.xml ---
+// ============================================================
+// 8. sitemap.xml
+// ============================================================
 const lastmodDate = dateModified.split("T")[0];
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${siteBaseUrl}</loc><lastmod>${lastmodDate}</lastmod></url>
+  <url>
+    <loc>${siteBaseUrl}</loc>
+    <lastmod>${lastmodDate}</lastmod>
+  </url>
 </urlset>`;
 writeFileSync("docs/sitemap.xml", sitemap, "utf8");
 
+// ============================================================
+// 9. FINALIZA
+// ============================================================
 console.log(`✅ Glossário atualizado com ${items.length} termos. Data:`, dateModified);
+console.log("   - URN removido do frontend (só fica no JSON-LD e API)");
+console.log("   - Links âncora com slug para citação: ex: #protocolo-hidra");
