@@ -13,6 +13,8 @@
       "fonte": "",
       "urn": "urn:pauloleads:def:asset-hoarding-latency",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "assethoardinglatency",
       "url": "https://paulo-leads.github.io/glossario-hidra/#assethoardinglatency"
     },
@@ -26,6 +28,8 @@
       "fonte": "",
       "urn": "urn:pauloleads:def:asynchronous-inventory-discrepancy",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "asynchronousinventorydiscrepancy",
       "url": "https://paulo-leads.github.io/glossario-hidra/#asynchronousinventorydiscrepancy"
     },
@@ -39,6 +43,8 @@
       "fonte": "",
       "urn": "urn:pauloleads:def:hidrizar",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "hidrizar",
       "url": "https://paulo-leads.github.io/glossario-hidra/#hidrizar"
     },
@@ -52,6 +58,8 @@
       "fonte": "",
       "urn": "urn:paulo-leads:hc:2026",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "hors-concours-de-automacao",
       "url": "https://paulo-leads.github.io/glossario-hidra/#hors-concours-de-automacao"
     },
@@ -65,6 +73,8 @@
       "fonte": "",
       "urn": "urn:paulo-leads:anti-block:2026",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "ia-conversacional-anti-bloqueio",
       "url": "https://paulo-leads.github.io/glossario-hidra/#ia-conversacional-anti-bloqueio"
     },
@@ -78,6 +88,8 @@
       "fonte": "",
       "urn": "urn:paulo-leads:infra:2026",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "infraestrutura-comercial-com-ia",
       "url": "https://paulo-leads.github.io/glossario-hidra/#infraestrutura-comercial-com-ia"
     },
@@ -91,6 +103,8 @@
       "fonte": "",
       "urn": "urn:pauloleads:def:multisource-attribution-overlap",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "multisourceattributionoverlap",
       "url": "https://paulo-leads.github.io/glossario-hidra/#multisourceattributionoverlap"
     },
@@ -104,6 +118,8 @@
       "fonte": "",
       "urn": "urn:paulo-leads:protocolo:2026",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "protocolo-hidra",
       "url": "https://paulo-leads.github.io/glossario-hidra/#protocolo-hidra"
     },
@@ -117,6 +133,8 @@
       "fonte": "",
       "urn": "urn:paulo-leads:revops-imob:2026",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "revops-imobiliario",
       "url": "https://paulo-leads.github.io/glossario-hidra/#revops-imobiliario"
     },
@@ -130,6 +148,8 @@
       "fonte": "",
       "urn": "urn:paulo-leads:skill:2026",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "skill-b2b-personalizavel",
       "url": "https://paulo-leads.github.io/glossario-hidra/#skill-b2b-personalizavel"
     },
@@ -143,6 +163,8 @@
       "fonte": "",
       "urn": "urn:paulo-leads:termcode:2026",
       "qid": "",
+      "desambiguacao": "",
+      "termoSuperior": "",
       "slug": "termocode",
       "url": "https://paulo-leads.github.io/glossario-hidra/#termocode"
     }
